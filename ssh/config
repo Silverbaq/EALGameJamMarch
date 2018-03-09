@@ -1,0 +1,6 @@
+host gamejame-livedie
+	hostname 10.217.16.51
+	user sysuser
+	IdentityFile ssh/gamejam
+
+
