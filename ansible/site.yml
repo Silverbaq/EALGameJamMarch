@@ -1,5 +1,21 @@
 - hosts: all
-  
+
+  vars:
+    - repo_path: /opt/EALGameJamMarch
+    - gamer_user: gamer
+    - gamer_password: gamer
+    - gamer_salt: "/uF.fXhJopgRb.Vh"
+    - guesser_user: guesser
+    - guesser_password: guesser
+    - guesser_salt: "52Fo7Ul19N5EmF6x"
+
   tasks:
   - debug: msg="test"
 
+  - name: install programs
+    apt: state=present name="{{ item }}"
+    with_items:
+    - git
+
+  - import_tasks: tasks/add_repo.yml
+  - import_tasks: tasks/users.yml

@@ -1,0 +1,5 @@
+- name: fetch repo
+  git:
+    repo: 'https://github.com/Silverbaq/EALGameJamMarch.git'
+    dest: "{{ repo_path}}"
+    update: yes

@@ -1,0 +1,11 @@
+- name: create gamer user
+  user:
+    name: "{{ gamer_user }}"
+    shell: "{{ repo_path }}/login_tests/gamer.py"
+    password: "{{ gamer_password | password_hash('sha512', gamer_salt) }}"
+
+- name: create guesser user
+  user:
+    name: "{{ guesser_user }}"
+    shell: "{{ repo_path }}/login_tests/gamer.py"
+    password: "{{ guesser_password | password_hash('sha512', guesser_salt) }}"
