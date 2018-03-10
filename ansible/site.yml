@@ -12,6 +12,16 @@
   tasks:
   - debug: msg="test"
 
+  - name: add keys to root user
+    authorized_key:
+        user: root
+        state: present
+        key: "https://github.com/{{item}}.keys"
+    with_items:
+    - moozer
+    - oddbitkid
+    - Silverbaq  
+
   - name: install programs
     apt: state=present name="{{ item }}"
     with_items:
