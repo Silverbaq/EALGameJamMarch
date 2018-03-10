@@ -20,7 +20,15 @@
     with_items:
     - moozer
     - oddbitkid
-    - Silverbaq  
+    - Silverbaq
+
+  - name: set sshd config
+    template:
+      src: templates/sshd_config.j2
+      dest: /etc/ssh/sshd_config
+      owner: root
+      group: root
+    notify: restart sshd
 
   - name: install programs
     apt: state=present name="{{ item }}"
@@ -29,3 +37,7 @@
 
   - import_tasks: tasks/add_repo.yml
   - import_tasks: tasks/users.yml
+
+  handlers:
+    - name: restart sshd
+      service: name=sshd state=restarted
