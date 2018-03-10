@@ -56,7 +56,16 @@ class Snake(object):
         self.last_head_coor = (self.head.x, self.head.y)
         self.direction_map[self.direction]()
 
-    def update_object(self, direction):
+        # If the snake eats the food
+        if self.head.x == food.x and snake.head.y == food.y:
+            snake.eat_food(food)
+
+        if snake.collided:
+            stop_game()
+
+
+
+    def update_direction(self, direction):
         if direction != Snake.REV_DIR_MAP[self.direction]:
             self.direction = direction
 
@@ -102,7 +111,10 @@ class Body(object):
     def render(self):
         return
 
-    def update_object(self):
+    def update(self):
+        return
+
+    def update_direction(self, direction):
         return
 
     @property
@@ -120,7 +132,11 @@ class Food(object):
     def render(self):
         self.window.addstr(self.y, self.x, self.char)
 
-    def update_object(self):
+
+    def update(self):
+        return
+
+    def update_direction(self, direction):
         return
 
     def reset(self):
@@ -136,11 +152,25 @@ SNAKE_X = SNAKE_LENGTH + 1
 SNAKE_Y = 3
 TIMEOUT = 100
 
-if __name__ == '__main__':
+
+def stop_game():
+    game.stop_game()
+
+def run_game():
+    global game
     game = GameBoard(WIDTH, HEIGHT)
     window = game.get_window()
 
+    global snake
     snake = Snake(SNAKE_X, SNAKE_Y, window)
+    global food
     food = Food(window, '*')
 
+    game.add_game_object(snake)
+    game.add_game_object(food)
+
     game.start()
+
+
+if __name__ == '__main__':
+    run_game()
