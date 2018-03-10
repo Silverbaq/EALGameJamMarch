@@ -1,5 +1,6 @@
 from MyGameEngine import GameBoard
 from curses import KEY_RIGHT, KEY_LEFT, KEY_DOWN, KEY_UP, KEY_ENTER
+import datetime
 
 
 class BoardValues(object):
@@ -7,7 +8,7 @@ class BoardValues(object):
     card_size = (7, 7)
     offset = (3, 1)
     rows = 2
-    cols = 3
+    cols = 4
 
     def __init__(self):
         self.current_row = 0
@@ -48,6 +49,12 @@ class Card(object):
         self.geo = geometry
         self.turned = False
 
+    def set_turned(self, state):
+        self.turned = state
+
+    def is_turned(self):
+        return self.turned
+
     def get_pos(self):
         return self.row, self.col
 
@@ -83,7 +90,7 @@ class Card(object):
         return
 
     def update_direction(self, direction):
-        if direction == 10: # enter key
+        if direction == 10:  # enter key
             if (self.geo.current_row == self.row) and (self.geo.current_col == self.col):
                 self.turned = not self.turned
 
@@ -107,6 +114,9 @@ class Board(object):
             for j in range(self.cols):
                 self.cards.append(Card(window, i, j, self.geo))
 
+        self.is_waiting = False
+        self.wait_until_time = datetime.datetime.now()
+
     def get_card_number(self, row, col):
         return row * self.rows + col
 
@@ -115,12 +125,14 @@ class Board(object):
             card.render()
 
     def update(self):
+        if self.is_waiting:
+            if datetime.datetime.now() > self.wait_until_time:
+                for c in self.cards:
+                    c.set_turned(False)
+                self.is_waiting = False
         return
 
     def update_direction(self, direction):
-        for c in self.cards:
-            c.update_direction(direction)
-
         row, col = self.geo.current_row, self.geo.current_col
         if direction == KEY_LEFT:
             self.geo.current_col = (col - 1) % self.geo.cols
@@ -138,7 +150,22 @@ class Board(object):
             self.geo.current_row = (row + 1) % self.geo.rows
             return
 
+        if not self.is_waiting:
+            for c in self.cards:
+                c.update_direction(direction)
+
+            if direction == 10:  # enter key
+                self.check_turned()
         return
+
+    def check_turned(self):
+        sum_turned = sum(1 for c in self.cards if c.is_turned())
+        if sum_turned > 1:
+            self.set_wait_state()
+
+    def set_wait_state(self):
+        self.is_waiting = True
+        self.wait_until_time = datetime.timedelta(seconds=2) + datetime.datetime.now()
 
     def reset(self):
         return
