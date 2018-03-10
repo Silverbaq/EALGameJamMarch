@@ -160,7 +160,6 @@ class Board(object):
 
     def compare_turned(self):
         turned = None
-#        for c in range(len(self.cards)):
         for c in self.cards:
             if c.is_show_front():
                 if not turned:
@@ -171,16 +170,6 @@ class Board(object):
                         c.set_show_front(True)
                         turned.set_disabled(True)
                         turned.set_show_front(True)
-#        for c in self.cards:
-#            if self.cards[c].is_show_front():
-#                if not turned:
-#                    turned = c
-#                else:
-#                    if self.cards[turned].card_type == self.cards[c].card_type:
-#                        self.cards[c].set_disabled(True)
-#                        self.cards[c].set_show_front(True)
-#                        self.cards[turned].set_disabled(True)
-#                        self.cards[turned].set_show_front(True)
 
     def update_direction(self, direction):
         row, col = self.geo.current_row, self.geo.current_col
