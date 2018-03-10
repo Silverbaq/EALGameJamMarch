@@ -3,7 +3,7 @@
 '''
 
 import curses
-from curses import KEY_RIGHT, KEY_LEFT, KEY_DOWN, KEY_UP
+from curses import KEY_RIGHT, KEY_LEFT, KEY_DOWN, KEY_UP, KEY_EXIT, KEY_BACKSPACE, KEY_ENTER
 from threading import Thread
 
 
@@ -38,7 +38,16 @@ class GameBoard(object):
 
             if event in [KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT]:
                 for element in self.game_objects:
-                    element.update_object(event)  # Every game element needs a "update_object"
+                    element.update_direction(event)  # Every game element needs a "update_object"
+
+            # If game event escape, end game
+            if event in [KEY_EXIT]:
+                self.stop_game()
+
+
+            # Update game
+            for element in self.game_objects:
+                element.update()
 
             if not self.game_running:  # terminate game
                 break
