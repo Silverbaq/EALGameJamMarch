@@ -73,7 +73,7 @@ class PlayerPad(object):
     def render(self):
         self.window.addstr(self.y, self.x - 2, self.shape)
         self.window.addstr(0,0, self.lives)
-        self.window.addstr(0,(MAX_X/2)-4, self.score)
+        self.window.addstr(0,int(MAX_X/2)-4, self.score)
 
     def update(self):
         return
