@@ -36,14 +36,14 @@ class GameBoard(object):
             # Update game events
             event = self.window.getch()
 
-            if event in [KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT]:
+            # 10 is the enter key
+            if event in [KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, 10]:
                 for element in self.game_objects:
                     element.update_direction(event)  # Every game element needs a "update_object"
 
             # If game event escape, end game
             if event in [KEY_EXIT]:
                 self.stop_game()
-
 
             # Update game
             for element in self.game_objects:
