@@ -1,6 +1,7 @@
 from MyGameEngine import GameBoard
 from curses import KEY_RIGHT, KEY_LEFT, KEY_DOWN, KEY_UP, KEY_ENTER
 import datetime
+import random
 
 
 class BoardValues(object):
@@ -41,13 +42,15 @@ class SelectedMarker(object):
 
 
 class Card(object):
-    def __init__(self, window, row, col, geometry):
+    def __init__(self, window, row, col, geometry, type):
         self.card_size = geometry.card_size
         self.window = window
         self.row = row
         self.col = col
         self.geo = geometry
         self.turned = False
+        self.disabled = False
+        self.type = str(type)
 
     def set_turned(self, state):
         self.turned = state
@@ -78,10 +81,13 @@ class Card(object):
                 y = self.geo.card_size[1] * self.row + \
                     self.geo.spacer[1] * self.row \
                     + self.geo.offset[1] + r
-                self.window.addstr(y, x, '0')
+                self.window.addstr(y, x, self.type)
 
     def render(self):
-        if self.turned:
+        if self.disabled:
+            return
+
+        if not self.turned:
             self.render_back()
         else:
             self.render_front()
@@ -109,13 +115,22 @@ class Board(object):
 
         self.geo = geometry
         self.cards = []
-
-        for i in range(self.rows):
-            for j in range(self.cols):
-                self.cards.append(Card(window, i, j, self.geo))
+        self.init_cards(window)
 
         self.is_waiting = False
         self.wait_until_time = datetime.datetime.now()
+
+    def init_cards(self, window):
+        card_array = []
+        for i in range((self.cols * self.rows)//2):
+            card_array.append(i)
+            card_array.append(i)
+        random.shuffle(card_array)
+
+        for i in range(self.rows):
+            for j in range(self.cols):
+                self.cards.append(Card(window, i, j, self.geo,
+                                       card_array[i * self.cols + j]))
 
     def get_card_number(self, row, col):
         return row * self.rows + col
