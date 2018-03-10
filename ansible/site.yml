@@ -1,0 +1,49 @@
+- hosts: all
+
+  vars:
+    - repo_path: /opt/EALGameJamMarch
+    - gamer_user: gamer
+    - gamer_password: gamer
+    - gamer_salt: "/uF.fXhJopgRb.Vh"
+    - guesser_user: guesser
+    - guesser_password: guesser
+    - guesser_salt: "52Fo7Ul19N5EmF6x"
+
+  tasks:
+  - debug: msg="test"
+
+  - name: add keys to root user
+    authorized_key:
+        user: root
+        state: present
+        key: "https://github.com/{{item}}.keys"
+    with_items:
+    - moozer
+    - oddbitkid
+    - Silverbaq
+
+  - name: set sshd config
+    template:
+      src: templates/sshd_config.j2
+      dest: /etc/ssh/sshd_config
+      owner: root
+      group: root
+    notify: restart sshd
+
+  - name: create test log file r/w
+    file:
+      state: file
+      path: /tmp/temp.log
+      mode: 0666
+
+  - name: install programs
+    apt: state=present name="{{ item }}"
+    with_items:
+    - git
+
+  - import_tasks: tasks/add_repo.yml
+  - import_tasks: tasks/users.yml
+
+  handlers:
+    - name: restart sshd
+      service: name=sshd state=restarted
