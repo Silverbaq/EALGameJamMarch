@@ -2,6 +2,16 @@ from MyGameEngine import GameBoard
 from curses import KEY_RIGHT, KEY_LEFT, KEY_DOWN, KEY_UP, KEY_ENTER
 import datetime
 import random
+from enum import Enum
+
+
+class GameStates(Enum):
+    RUNNING = 1
+    SHOWING = 2
+    SHOWING_LOST = 3
+    SHOWING_WON = 4
+    LOST = 5
+    WON = 6
 
 
 class BoardValues(object):
@@ -10,6 +20,7 @@ class BoardValues(object):
     offset = (3, 1)
     rows = 2
     cols = 4
+    max_wrong = 2
 
     def __init__(self):
         self.current_row = 0
@@ -127,8 +138,11 @@ class Board(object):
         self.cards = []
         self.init_cards(window)
 
-        self.is_waiting = False
         self.wait_until_time = datetime.datetime.now()
+
+        self.bad_turns = 0
+        self.gamestate = GameStates.RUNNING
+        self.gamestatetext = "Game started"
 
     def init_cards(self, window):
         card_array = []
@@ -145,18 +159,48 @@ class Board(object):
     def get_card_number(self, row, col):
         return row * self.cols + col
 
+    def render_status(self):
+        y = 17
+        x = 12
+        self.window.addstr(y, x, self.gamestatetext)
+
     def render(self):
+        self.render_status()
         for card in self.cards:
             card.render()
 
     def update(self):
-        if self.is_waiting:
+        if self.gamestate == GameStates.WON or self.gamestate == GameStates.LOST:
             if datetime.datetime.now() > self.wait_until_time:
-                self.is_waiting = False
-                self.compare_turned()
-                for c in self.cards:
-                    c.set_show_front(False)
+                game.stop_game()
+
+        elif self.gamestate == GameStates.SHOWING_LOST:
+            if datetime.datetime.now() > self.wait_until_time:
+                self.gamestate = GameStates.LOST
+                self.gamestatetext = "__You lost !!!__"
+
+        elif self.gamestate == GameStates.SHOWING_WON:
+            if datetime.datetime.now() > self.wait_until_time:
+                self.gamestate = GameStates.won
+                self.gamestatetext = "__You win !!!_"
+
+        else:
+            self.compare_turned()
+            for c in self.cards:
+                c.set_show_front(False)
+
+            self.check_win_loose()
         return
+
+    def check_win_loose(self):
+        enabled_count = sum([1 for c in self.cards if not c.is_disabled()])
+        if enabled_count < 1:
+            self.gamestate = GameStates.SHOWING_LOST
+            self.gamestatetext = "You win !!!"
+
+        elif self.bad_turns > self.geo.max_wrong:
+            self.gamestate = GameStates.SHOWING_LOST
+            self.gamestatetext = "You lost !!!"
 
     def compare_turned(self):
         turned = None
@@ -170,6 +214,8 @@ class Board(object):
                         c.set_show_front(True)
                         turned.set_disabled(True)
                         turned.set_show_front(True)
+                    else:
+                        self.bad_turns = self.bad_turns + 1
 
     def update_direction(self, direction):
         row, col = self.geo.current_row, self.geo.current_col
@@ -189,21 +235,32 @@ class Board(object):
             self.geo.current_row = (row + 1) % self.geo.rows
             return
 
-        if not self.is_waiting:
+        self.gamestatetext = "state is {}".format( self.gamestate)
+
+        if self.gamestate == GameStates.RUNNING:
             for c in self.cards:
                 c.update_direction(direction)
 
             if direction == 10:  # enter key
+                self.gamestatetext = "state is {} and ENTER".format(self.gamestate)
+
                 self.check_turned()
         return
 
+    def show_you_loose(self):
+        self.gamestate = GameStates.SHOWING_LOST
+        self.gamestatetext = "You loose!!!"
+        self.wait_until_time = datetime.timedelta(seconds=3) + datetime.datetime.now()
+
     def check_turned(self):
         sum_turned = sum(1 for c in self.cards if c.is_show_front())
+        self.gamestatetext = "sumturned {}".format(sum_turned)
         if sum_turned > 1:
-            self.set_wait_state()
+            self.set_showing_state()
 
-    def set_wait_state(self):
-        self.is_waiting = True
+    def set_showing_state(self):
+        self.gamestate = GameStates.SHOWING
+        self.gamestatetext = "Showing... ({}/{})".format(self.bad_turns, self.geo.max_wrong)
         self.wait_until_time = datetime.timedelta(seconds=2) + datetime.datetime.now()
 
     def reset(self):
