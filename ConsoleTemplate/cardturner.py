@@ -27,7 +27,21 @@ class BoardValues(object):
         self.current_col = 0
 
 
-class SelectedMarker(object):
+class GameObject(object):
+    def render(self):
+        return
+
+    def update(self):
+        return
+
+    def update_direction(self, direction):
+        return
+
+    def reset(self):
+        return
+
+
+class SelectedMarker(GameObject):
     def __init__(self, window, geometry):
         self.window = window
         self.geo = geometry
@@ -42,17 +56,8 @@ class SelectedMarker(object):
         self.window.addstr(y, x, 'Y')
         return
 
-    def update(self):
-        return
 
-    def update_direction(self, direction):
-        return
-
-    def reset(self):
-        return
-
-
-class Card(object):
+class Card(GameObject):
     def __init__(self, window, row, col, geometry, card_type):
         self._window = window
         self._row = row
@@ -113,9 +118,6 @@ class Card(object):
         else:
             self.render_front()
 
-    def update(self):
-        return
-
     def update_direction(self, direction):
         if direction == 10:  # enter key
             if (self._geo.current_row == self._row) and (self._geo.current_col == self._col):
@@ -123,11 +125,8 @@ class Card(object):
 
         return
 
-    def reset(self):
-        return
 
-
-class Board(object):
+class Board(GameObject):
     def __init__(self, window, geometry):
         self.card_size = (5, 5)
         self.window = window
@@ -181,14 +180,17 @@ class Board(object):
 
         elif self.gamestate == GameStates.SHOWING_WON:
             if datetime.datetime.now() > self.wait_until_time:
-                self.gamestate = GameStates.won
+                self.gamestate = GameStates.WON
                 self.gamestatetext = "__You win !!!_"
 
+        elif self.gamestate == GameStates.SHOWING:
+            if datetime.datetime.now() > self.wait_until_time:
+                for c in self.cards:
+                    c.set_show_front(False)
+            self.gamestate = GameStates.RUNNING
+            self.gamestatetext = "go go go"
         else:
             self.compare_turned()
-            for c in self.cards:
-                c.set_show_front(False)
-
             self.check_win_loose()
         return
 
@@ -235,7 +237,7 @@ class Board(object):
             self.geo.current_row = (row + 1) % self.geo.rows
             return
 
-        self.gamestatetext = "state is {}".format( self.gamestate)
+        self.gamestatetext = "state is {}".format(self.gamestate)
 
         if self.gamestate == GameStates.RUNNING:
             for c in self.cards:
@@ -262,9 +264,6 @@ class Board(object):
         self.gamestate = GameStates.SHOWING
         self.gamestatetext = "Showing... ({}/{})".format(self.bad_turns, self.geo.max_wrong)
         self.wait_until_time = datetime.timedelta(seconds=2) + datetime.datetime.now()
-
-    def reset(self):
-        return
 
 
 def run_game(width, height):
