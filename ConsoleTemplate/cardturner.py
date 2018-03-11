@@ -81,10 +81,12 @@ class Card(GameObject):
     def is_show_front(self):
         return self._show_front
 
-    def is_disabled(self):
+    @property
+    def disabled(self):
         return self._disabled
 
-    def set_disabled(self, state):
+    @disabled.setter
+    def disabled(self, state):
         self._disabled = state
 
     def render_back(self):
@@ -168,23 +170,27 @@ class Board(GameObject):
         for card in self.cards:
             card.render()
 
+    @property
+    def timeout(self):
+        return datetime.datetime.now() > self.wait_until_time
+
     def update(self):
         if self.gamestate == GameStates.WON or self.gamestate == GameStates.LOST:
-            if datetime.datetime.now() > self.wait_until_time:
+            if self.timeout:
                 game.stop_game()
 
         elif self.gamestate == GameStates.SHOWING_LOST:
-            if datetime.datetime.now() > self.wait_until_time:
+            if self.timeout:
                 self.gamestate = GameStates.LOST
                 self.gamestatetext = "__You lost !!!__"
 
         elif self.gamestate == GameStates.SHOWING_WON:
-            if datetime.datetime.now() > self.wait_until_time:
+            if self.timeout:
                 self.gamestate = GameStates.WON
                 self.gamestatetext = "__You win !!!_"
 
         elif self.gamestate == GameStates.SHOWING:
-            if datetime.datetime.now() > self.wait_until_time:
+            if self.timeout:
                 for c in self.cards:
                     c.set_show_front(False)
             self.gamestate = GameStates.RUNNING
