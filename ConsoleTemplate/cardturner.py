@@ -72,7 +72,7 @@ class Card(GameObject):
         return self._card_type
 
     def set_show_front(self, state):
-        if self.is_disabled():
+        if self.disabled:
             self._show_front = False
             return
 
@@ -219,7 +219,7 @@ class Board(GameObject):
         return
 
     def check_win_loose(self):
-        enabled_count = sum([1 for c in self.cards if not c.is_disabled()])
+        enabled_count = sum([1 for c in self.cards if not c.disabled])
         if enabled_count < 1:
             self.gamestate = GameStates.SHOWING_LOST
             self.gamestatetext = "You win !!!"
@@ -236,9 +236,9 @@ class Board(GameObject):
                     turned = c
                 else:
                     if turned.card_type == c.card_type:
-                        c.set_disabled(True)
+                        c.disabled = True
                         c.set_show_front(True)
-                        turned.set_disabled(True)
+                        turned.disabled = True
                         turned.set_show_front(True)
                     else:
                         self.bad_turns = self.bad_turns + 1
@@ -269,7 +269,6 @@ class Board(GameObject):
 
             if direction == 10:  # enter key
                 self.gamestatetext = "state is {} and ENTER".format(self.gamestate)
-
                 self.check_turned()
         return
 
