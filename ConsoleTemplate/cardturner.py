@@ -198,8 +198,6 @@ class Board(GameObject):
             self.gamestate = GameStates.RUNNING
             self.gamestatetext = "go go go ({}/{})".format(self.bad_turns, self.geo.max_wrong)
 
-
-
     def update_running(self):
         sum_turned = sum(1 for c in self.cards if c.is_show_front())
         if sum_turned > 1:
@@ -272,31 +270,11 @@ class Board(GameObject):
             self.geo.current_row = (row + 1) % self.geo.rows
             return
 
-        self.gamestatetext = "state is {}".format(self.gamestate)
-
         if self.gamestate == GameStates.RUNNING:
             for c in self.cards:
                 c.update_direction(direction)
 
- #           if direction == 10:  # enter key
- #               self.gamestatetext = "state is {} and ENTER".format(self.gamestate)
- #               self.check_turned()
         return
-
-    # def show_you_loose(self):
-    #     self.gamestate = GameStates.SHOWING_LOST
-    #     self.gamestatetext = "You loose!!!"
-    #     self.wait_until_time = datetime.timedelta(seconds=3) + datetime.datetime.now()
-    #
-    # def check_turned(self):
-    #     sum_turned = sum(1 for c in self.cards if c.is_show_front())
-    #     if sum_turned > 1:
-    #         self.set_showing_state()
-    #
-    # def set_showing_state(self):
-    #     self.gamestate = GameStates.SHOWING
-    #     self.gamestatetext = "Showing... ({}/{})".format(self.bad_turns, self.geo.max_wrong)
-    #     self.wait_until_time = datetime.timedelta(seconds=2) + datetime.datetime.now()
 
 
 def run_game(width, height):
