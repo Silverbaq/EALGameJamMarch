@@ -2,6 +2,16 @@ from MyGameEngine import GameBoard
 from curses import KEY_RIGHT, KEY_LEFT, KEY_DOWN, KEY_UP, KEY_ENTER
 import datetime
 import random
+from enum import Enum
+
+
+class GameStates(Enum):
+    RUNNING = 1
+    SHOWING = 2
+    SHOWING_LOST = 3
+    SHOWING_WON = 4
+    LOST = 5
+    WON = 6
 
 
 class BoardValues(object):
@@ -10,13 +20,28 @@ class BoardValues(object):
     offset = (3, 1)
     rows = 2
     cols = 4
+    max_wrong = 2
 
     def __init__(self):
         self.current_row = 0
         self.current_col = 0
 
 
-class SelectedMarker(object):
+class GameObject(object):
+    def render(self):
+        return
+
+    def update(self):
+        return
+
+    def update_direction(self, direction):
+        return
+
+    def reset(self):
+        return
+
+
+class SelectedMarker(GameObject):
     def __init__(self, window, geometry):
         self.window = window
         self.geo = geometry
@@ -31,17 +56,8 @@ class SelectedMarker(object):
         self.window.addstr(y, x, 'Y')
         return
 
-    def update(self):
-        return
 
-    def update_direction(self, direction):
-        return
-
-    def reset(self):
-        return
-
-
-class Card(object):
+class Card(GameObject):
     def __init__(self, window, row, col, geometry, card_type):
         self._window = window
         self._row = row
@@ -56,7 +72,7 @@ class Card(object):
         return self._card_type
 
     def set_show_front(self, state):
-        if self.is_disabled():
+        if self.disabled:
             self._show_front = False
             return
 
@@ -65,10 +81,12 @@ class Card(object):
     def is_show_front(self):
         return self._show_front
 
-    def is_disabled(self):
+    @property
+    def disabled(self):
         return self._disabled
 
-    def set_disabled(self, state):
+    @disabled.setter
+    def disabled(self, state):
         self._disabled = state
 
     def render_back(self):
@@ -102,9 +120,6 @@ class Card(object):
         else:
             self.render_front()
 
-    def update(self):
-        return
-
     def update_direction(self, direction):
         if direction == 10:  # enter key
             if (self._geo.current_row == self._row) and (self._geo.current_col == self._col):
@@ -112,11 +127,8 @@ class Card(object):
 
         return
 
-    def reset(self):
-        return
 
-
-class Board(object):
+class Board(GameObject):
     def __init__(self, window, geometry):
         self.card_size = (5, 5)
         self.window = window
@@ -127,8 +139,11 @@ class Board(object):
         self.cards = []
         self.init_cards(window)
 
-        self.is_waiting = False
         self.wait_until_time = datetime.datetime.now()
+
+        self.bad_turns = 0
+        self.gamestate = GameStates.RUNNING
+        self.gamestatetext = "Game started"
 
     def init_cards(self, window):
         card_array = []
@@ -145,18 +160,82 @@ class Board(object):
     def get_card_number(self, row, col):
         return row * self.cols + col
 
+    def render_status(self):
+        y = 17
+        x = 12
+        self.window.addstr(y, x, self.gamestatetext)
+
     def render(self):
+        self.render_status()
         for card in self.cards:
             card.render()
 
+    @property
+    def timeout(self):
+        return datetime.datetime.now() > self.wait_until_time
+
+    def update_won_lost(self):
+        if self.timeout:
+            game.stop_game()
+
+    def update_showing_lost(self):
+        if self.timeout:
+            self.gamestate = GameStates.LOST
+            self.gamestatetext = "__You lost !!!__"
+
+    def update_showing_won(self):
+        if self.timeout:
+            self.gamestate = GameStates.WON
+            self.gamestatetext = "__You win !!!_"
+
+    def update_showing(self):
+        if self.timeout:
+            self.compare_turned()
+
+            for c in self.cards:
+                c.set_show_front(False)
+
+            self.gamestate = GameStates.RUNNING
+            self.gamestatetext = "go go go ({}/{})".format(self.bad_turns, self.geo.max_wrong)
+
+    def update_running(self):
+        sum_turned = sum(1 for c in self.cards if c.is_show_front())
+        if sum_turned > 1:
+            self.gamestate = GameStates.SHOWING
+            self.gamestatetext = "Showing... ({}/{})".format(self.bad_turns, self.geo.max_wrong)
+            self.wait_until_time = datetime.timedelta(seconds=2) + datetime.datetime.now()
+
+        self.check_win_loose()
+
     def update(self):
-        if self.is_waiting:
-            if datetime.datetime.now() > self.wait_until_time:
-                self.is_waiting = False
-                self.compare_turned()
-                for c in self.cards:
-                    c.set_show_front(False)
+        if self.gamestate == GameStates.WON or self.gamestate == GameStates.LOST:
+            self.update_won_lost()
+
+        elif self.gamestate == GameStates.SHOWING_LOST:
+            self.update_showing_lost()
+
+        elif self.gamestate == GameStates.SHOWING_WON:
+            self.update_showing_won()
+
+        elif self.gamestate == GameStates.SHOWING:
+            self.update_showing()
+
+        elif self.gamestate == GameStates.RUNNING:
+            self.update_running()
+
         return
+
+    def check_win_loose(self):
+        enabled_count = sum([1 for c in self.cards if not c.disabled])
+        if enabled_count < 1:
+            self.gamestate = GameStates.SHOWING_LOST
+            self.gamestatetext = "You win !!!"
+            self.wait_until_time = datetime.timedelta(seconds=3) + datetime.datetime.now()
+
+        elif self.bad_turns > self.geo.max_wrong:
+            self.gamestate = GameStates.SHOWING_LOST
+            self.gamestatetext = "You lost !!!"
+            self.wait_until_time = datetime.timedelta(seconds=3) + datetime.datetime.now()
 
     def compare_turned(self):
         turned = None
@@ -166,10 +245,12 @@ class Board(object):
                     turned = c
                 else:
                     if turned.card_type == c.card_type:
-                        c.set_disabled(True)
+                        c.disabled = True
                         c.set_show_front(True)
-                        turned.set_disabled(True)
+                        turned.disabled = True
                         turned.set_show_front(True)
+                    else:
+                        self.bad_turns = self.bad_turns + 1
 
     def update_direction(self, direction):
         row, col = self.geo.current_row, self.geo.current_col
@@ -189,24 +270,10 @@ class Board(object):
             self.geo.current_row = (row + 1) % self.geo.rows
             return
 
-        if not self.is_waiting:
+        if self.gamestate == GameStates.RUNNING:
             for c in self.cards:
                 c.update_direction(direction)
 
-            if direction == 10:  # enter key
-                self.check_turned()
-        return
-
-    def check_turned(self):
-        sum_turned = sum(1 for c in self.cards if c.is_show_front())
-        if sum_turned > 1:
-            self.set_wait_state()
-
-    def set_wait_state(self):
-        self.is_waiting = True
-        self.wait_until_time = datetime.timedelta(seconds=2) + datetime.datetime.now()
-
-    def reset(self):
         return
 
 
