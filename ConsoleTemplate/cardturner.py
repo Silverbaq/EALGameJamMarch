@@ -174,30 +174,48 @@ class Board(GameObject):
     def timeout(self):
         return datetime.datetime.now() > self.wait_until_time
 
-    def update(self):
-        if self.gamestate == GameStates.WON or self.gamestate == GameStates.LOST:
-            if self.timeout:
-                game.stop_game()
+    def update_won_lost(self):
+        if self.timeout:
+            game.stop_game()
 
-        elif self.gamestate == GameStates.SHOWING_LOST:
-            if self.timeout:
-                self.gamestate = GameStates.LOST
-                self.gamestatetext = "__You lost !!!__"
+    def update_showing_lost(self):
+        if self.timeout:
+            self.gamestate = GameStates.LOST
+            self.gamestatetext = "__You lost !!!__"
 
-        elif self.gamestate == GameStates.SHOWING_WON:
-            if self.timeout:
-                self.gamestate = GameStates.WON
-                self.gamestatetext = "__You win !!!_"
+    def update_showing_won(self):
+        if self.timeout:
+            self.gamestate = GameStates.WON
+            self.gamestatetext = "__You win !!!_"
 
-        elif self.gamestate == GameStates.SHOWING:
-            if self.timeout:
-                for c in self.cards:
-                    c.set_show_front(False)
+    def update_showing(self):
+        if self.timeout:
+            for c in self.cards:
+                c.set_show_front(False)
+
             self.gamestate = GameStates.RUNNING
             self.gamestatetext = "go go go"
-        else:
-            self.compare_turned()
-            self.check_win_loose()
+
+    def update_running(self):
+        self.compare_turned()
+        self.check_win_loose()
+
+    def update(self):
+        if self.gamestate == GameStates.WON or self.gamestate == GameStates.LOST:
+            self.update_won_lost()
+
+        elif self.gamestate == GameStates.SHOWING_LOST:
+            self.update_showing_lost()
+
+        elif self.gamestate == GameStates.SHOWING_WON:
+            self.update_showing_won()
+
+        elif self.gamestate == GameStates.SHOWING:
+            self.update_showing()
+
+        elif self.gamestate == GameStates.RUNNING:
+            self.update_running()
+
         return
 
     def check_win_loose(self):
