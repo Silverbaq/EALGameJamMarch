@@ -190,14 +190,23 @@ class Board(GameObject):
 
     def update_showing(self):
         if self.timeout:
+            self.compare_turned()
+
             for c in self.cards:
                 c.set_show_front(False)
 
             self.gamestate = GameStates.RUNNING
-            self.gamestatetext = "go go go"
+            self.gamestatetext = "go go go ({}/{})".format(self.bad_turns, self.geo.max_wrong)
+
+
 
     def update_running(self):
-        self.compare_turned()
+        sum_turned = sum(1 for c in self.cards if c.is_show_front())
+        if sum_turned > 1:
+            self.gamestate = GameStates.SHOWING
+            self.gamestatetext = "Showing... ({}/{})".format(self.bad_turns, self.geo.max_wrong)
+            self.wait_until_time = datetime.timedelta(seconds=2) + datetime.datetime.now()
+
         self.check_win_loose()
 
     def update(self):
@@ -223,10 +232,12 @@ class Board(GameObject):
         if enabled_count < 1:
             self.gamestate = GameStates.SHOWING_LOST
             self.gamestatetext = "You win !!!"
+            self.wait_until_time = datetime.timedelta(seconds=3) + datetime.datetime.now()
 
         elif self.bad_turns > self.geo.max_wrong:
             self.gamestate = GameStates.SHOWING_LOST
             self.gamestatetext = "You lost !!!"
+            self.wait_until_time = datetime.timedelta(seconds=3) + datetime.datetime.now()
 
     def compare_turned(self):
         turned = None
@@ -267,26 +278,25 @@ class Board(GameObject):
             for c in self.cards:
                 c.update_direction(direction)
 
-            if direction == 10:  # enter key
-                self.gamestatetext = "state is {} and ENTER".format(self.gamestate)
-                self.check_turned()
+ #           if direction == 10:  # enter key
+ #               self.gamestatetext = "state is {} and ENTER".format(self.gamestate)
+ #               self.check_turned()
         return
 
-    def show_you_loose(self):
-        self.gamestate = GameStates.SHOWING_LOST
-        self.gamestatetext = "You loose!!!"
-        self.wait_until_time = datetime.timedelta(seconds=3) + datetime.datetime.now()
-
-    def check_turned(self):
-        sum_turned = sum(1 for c in self.cards if c.is_show_front())
-        self.gamestatetext = "sumturned {}".format(sum_turned)
-        if sum_turned > 1:
-            self.set_showing_state()
-
-    def set_showing_state(self):
-        self.gamestate = GameStates.SHOWING
-        self.gamestatetext = "Showing... ({}/{})".format(self.bad_turns, self.geo.max_wrong)
-        self.wait_until_time = datetime.timedelta(seconds=2) + datetime.datetime.now()
+    # def show_you_loose(self):
+    #     self.gamestate = GameStates.SHOWING_LOST
+    #     self.gamestatetext = "You loose!!!"
+    #     self.wait_until_time = datetime.timedelta(seconds=3) + datetime.datetime.now()
+    #
+    # def check_turned(self):
+    #     sum_turned = sum(1 for c in self.cards if c.is_show_front())
+    #     if sum_turned > 1:
+    #         self.set_showing_state()
+    #
+    # def set_showing_state(self):
+    #     self.gamestate = GameStates.SHOWING
+    #     self.gamestatetext = "Showing... ({}/{})".format(self.bad_turns, self.geo.max_wrong)
+    #     self.wait_until_time = datetime.timedelta(seconds=2) + datetime.datetime.now()
 
 
 def run_game(width, height):
